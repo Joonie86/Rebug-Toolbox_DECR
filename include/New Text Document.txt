@@ -1,0 +1,187 @@
+int vtrm_retrieve(u8* data)
+{
+
+	int ret;
+	u64 vuart_lpar_addr, nread, muid, nwritten;
+	install_new_poke();
+	ret = lv1_allocate_memory(4096, 0x0C, 0, &vuart_lpar_addr, &muid);
+ 	if (ret) {remove_new_poke(); return (ret);}
+
+	ret =  mm_map_lpar_memory_region(vuart_lpar_addr, HV_BASE, HV_SIZE, HV_PAGE_SIZE, 0);
+ 	if (ret) { {lv1_release_memory(vuart_lpar_addr);} remove_new_poke(); return (ret);}
+
+	uint64_t laid, paid;
+	u16 len;
+
+	laid = LAID;
+	paid = PAID;
+
+	struct ps3dm_vtrm_retrieve retrieve;
+	u8*p=(u8*)&retrieve;
+	memset(&retrieve, 0, sizeof(retrieve));
+
+	ps3dm_init_header(&retrieve.dm_hdr, 1, PS3DM_FID_VTRM,
+	    sizeof(retrieve) - sizeof(struct ps3dm_header),
+	    sizeof(retrieve) - sizeof(struct ps3dm_header));
+
+	ps3dm_init_ss_header(&retrieve.ss_hdr, PS3DM_PID_VTRM_RETRIEVE, laid, paid);
+
+	retrieve.nth = 0;
+
+	len = sizeof(retrieve);
+
+	for(u16 n = 0; n < len; n += 8)
+	{
+		static u64 value;
+		memcpy(&value, &p[n], 8);
+		lv2_poke(HV_BASE + (u64) n, value);
+		__asm__("sync");
+		value =  Lv2Syscall1(6, 0x8000000000000000ULL);
+	}
+
+	ret = lv1_write_virtual_uart(DISPMGR_VUART_PORT, vuart_lpar_addr, len, &nwritten);
+	if (ret < 0) goto leave;
+
+	ret = vuart_wait_for_rx_data(DISPMGR_VUART_PORT);
+	if (ret < 0) goto leave;
+
+	ret = lv1_read_virtual_uart(DISPMGR_VUART_PORT, vuart_lpar_addr, 4096, &nread);
+	if (ret < 0) goto leave;
+
+	if(nread>len) nread=len;
+
+	for(u16 n = 0; n < len; n += 8)
+	{
+		static u64 value;
+		value=Lv2Syscall1(6, HV_BASE + (u64) n);
+		memcpy(&p[n], &value, 8);
+	}
+
+	if(nread>=72)
+	{
+		memcpy(data, &p[nread-72], 40);
+		nread=40;
+	}
+
+	ret=nread;
+
+leave:
+	{lv1_undocumented_function_115(vuart_lpar_addr);}
+	{lv1_release_memory(vuart_lpar_addr);}
+	remove_new_poke();
+	return ret;
+}
+
+int vtrm_update(u8* data)
+{
+
+	int ret;
+	u64 vuart_lpar_addr, muid, nwritten;
+	install_new_poke();
+	ret = lv1_allocate_memory(4096, 0x0C, 0, &vuart_lpar_addr, &muid);
+ 	if (ret) {remove_new_poke(); return (ret);}
+
+	ret =  mm_map_lpar_memory_region(vuart_lpar_addr, HV_BASE, HV_SIZE, HV_PAGE_SIZE, 0);
+ 	if (ret) { {lv1_release_memory(vuart_lpar_addr);} remove_new_poke(); return (ret);}
+
+	uint64_t laid, paid;
+	u16 len;
+
+	laid = LAID;
+	paid = PAID;
+
+	struct ps3dm_vtrm_store_with_update store_with_update;
+	u8*p=(u8*)&store_with_update;
+	memset(&store_with_update, 0, sizeof(store_with_update));
+
+	ps3dm_init_header(&store_with_update.dm_hdr, 1, PS3DM_FID_VTRM,
+	    sizeof(store_with_update) - sizeof(struct ps3dm_header),
+	    sizeof(store_with_update) - sizeof(struct ps3dm_header));
+
+	ps3dm_init_ss_header(&store_with_update.ss_hdr, PS3DM_PID_VTRM_STORE_WITH_UPDATE, laid, paid);
+
+	memset(store_with_update.data, 0, sizeof(store_with_update.data));
+	memcpy(store_with_update.data, data, 40);
+
+	len = sizeof(store_with_update);
+
+	for(u16 n = 0; n < len; n += 8)
+	{
+		static u64 value;
+		memcpy(&value, &p[n], 8);
+		lv2_poke(HV_BASE + (u64) n, value);
+		__asm__("sync");
+		value =  Lv2Syscall1(6, 0x8000000000000000ULL);
+	}
+
+	ret = lv1_write_virtual_uart(DISPMGR_VUART_PORT, vuart_lpar_addr, len, &nwritten);
+	if (ret < 0) goto leave;
+
+	if(nwritten>len) nwritten=len;
+
+	ret=nwritten;
+
+leave:
+	{lv1_undocumented_function_115(vuart_lpar_addr);}
+	{lv1_release_memory(vuart_lpar_addr);}
+	remove_new_poke();
+	return ret;
+}
+
+
+int auth_drive(u64 arg, u8 mode)
+{
+
+	int ret;
+	u64 vuart_lpar_addr, muid, nwritten;
+	install_new_poke();
+	ret = lv1_allocate_memory(4096, 0x0C, 0, &vuart_lpar_addr, &muid);
+ 	if (ret) {remove_new_poke(); return (ret);}
+
+	ret =  mm_map_lpar_memory_region(vuart_lpar_addr, HV_BASE, HV_SIZE, HV_PAGE_SIZE, 0);
+ 	if (ret) { {lv1_release_memory(vuart_lpar_addr);} remove_new_poke(); return (ret);}
+
+	uint64_t laid, paid;
+	u16 len;
+
+	laid = LAID;
+	paid = PAID;
+
+	struct ps3dm_sm_drive_auth drive_auth;
+	u8*p=(u8*)&drive_auth;
+	memset(&drive_auth, 0, sizeof(drive_auth));
+
+	ps3dm_init_header(&drive_auth.dm_hdr, 1, PS3DM_FID_SM,
+	    sizeof(drive_auth) - sizeof(struct ps3dm_header),
+	    sizeof(drive_auth) - sizeof(struct ps3dm_header));
+	if(!mode)
+		ps3dm_init_ss_header(&drive_auth.ss_hdr, PS3DM_PID_SM_DRIVE_AUTH, laid, paid);
+	else
+		ps3dm_init_ss_header(&drive_auth.ss_hdr, PS3DM_PID_SM_DRIVE_CTRL, laid, paid);
+
+	drive_auth.arg = arg;
+
+	len = sizeof(drive_auth);
+
+	for(u16 n = 0; n < len; n += 8)
+	{
+		static u64 value;
+		memcpy(&value, &p[n], 8);
+		lv2_poke(HV_BASE + (u64) n, value);
+		__asm__("sync");
+		value =  Lv2Syscall1(6, 0x8000000000000000ULL);
+	}
+
+	ret = lv1_write_virtual_uart(DISPMGR_VUART_PORT, vuart_lpar_addr, len, &nwritten);
+	if (ret < 0) goto leave;
+
+	if(nwritten>len) nwritten=len;
+
+	ret=nwritten;
+
+leave:
+	{lv1_undocumented_function_115(vuart_lpar_addr);}
+	{lv1_release_memory(vuart_lpar_addr);}
+	remove_new_poke();
+	return ret;
+}
